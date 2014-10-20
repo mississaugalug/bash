@@ -1,5 +1,3 @@
-#!/bin/bash
-
 ## Extracts compressed files in the formats:
 # tar.bz2, .tar.gz, .rar, .gz, .tar, .tbz2, .tgz, .zip
 
