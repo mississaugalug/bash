@@ -1,0 +1,5 @@
+# Display the contents of $PATH in new lines
+
+path() {
+  echo $PATH | tr ':' '\n'
+}

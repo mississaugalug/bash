@@ -1,0 +1,7 @@
+# cats the last modified file in a folder
+
+catlf() {
+  unset FILE
+  FILE=$(/bin/ls -1tr | tail -n1)
+  cat $FILE
+}

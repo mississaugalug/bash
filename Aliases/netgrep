@@ -1,0 +1,8 @@
+# Same as 'netstat -an | grep '
+
+netgrep() {
+  _header=$(netstat -an | head -n 2)
+  _val=$(netstat -an | grep $1 | grep -v grep)
+  echo -e "$_header\n$_val"
+  unset _header _val
+}
