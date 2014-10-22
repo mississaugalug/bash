@@ -99,6 +99,10 @@ if [ -f ${UNSPLASH_DIR}/${TODAYS_PHOTO} ] ; then
           esac
         fi
         ;;
+    *)
+        echo "I don't know what distro you are running"
+        exit 1
+        ;;
   esac
   echo "$DATE $TODAYS_PHOTO" > $CURRENT
 else
@@ -123,7 +127,8 @@ if [[ $(ls ${UNSPLASH_DIR}/*.jpg | wc -l) -le 1 ]] ; then
 fi
 
 CURRNT_PHOTO=$(cat $CURRENT | awk '{print $2}')
-mv ${UNSPLASH_DIR}/$CURRNT_PHOTO ${UNSPLASH_DIR}/Used
+mkdir -p ${UNSPLASH_DIR}/Used
+mv ${UNSPLASH_DIR}/$CURRNT_PHOTO ${UNSPLASH_DIR}/Used/.
 SetNewPhoto
 }
 
