@@ -1,0 +1,31 @@
+## Gets distro
+OS1=$(cat /etc/issue.net | head -1 | awk '{print $1}')
+if [ $(echo $OS1 | grep -qi 'red' 2> /dev/null ; echo $?) = 0 ] ; then
+  LINUX_VERSION="Red Hat"
+elif [ $(echo $OS1 | grep -qi 'ubuntu' 2> /dev/null ; echo $?) = 0 ] ; then
+  LINUX_VERSION="Ubuntu"
+elif [ $(echo $OS1 | grep -qi 'open.*suse' 2> /dev/null ; echo $?) = 0 ] ; then
+  LINUX_VERSION="OpenSuse"
+fi
+
+
+## Sets up package manager aliases based on distro
+# Settings for Ubuntu
+if [ "$LINUX_VERSION" = "Ubuntu" ] ; then
+  alias aptdate='sudo apt-get update'
+  alias aptgrade='sudo apt-get upgrade'
+  alias aptinst='sudo apt-get install'
+  alias apts='apt-cache search'
+  alias apdapg='sudo apt-get update && sudo apt-get upgrade'
+# Settings for OpenSuse
+elif [ "$LINUX_VERSION" = "OpenSuse" ]
+ then
+  alias zypin='sudo zypper in'
+  alias zyprm='sudo zypper rm'
+  alias zypre='sudo zypper refresh'
+  alias zypse='zypper se'
+fi
+# Settings for CentOS
+#elif [ "$LINUX_VERSION" = "CentOS" ]
+#elif [ "$LINUX_VERSION" = "Red" ]  # RedHat
+#fi

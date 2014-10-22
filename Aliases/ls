@@ -1,0 +1,8 @@
+## ls aliases
+
+alias ls='ls --color=always'  # Lists files with color indicator
+alias ll='ls -lFh '		        # Lists files with indicator
+alias la='ls -lAFh'		        # Lists all files with indicator
+alias lt='ls -lFth'		        # Lists files by time with indicator
+alias ltr='ls -lFthr'	        # Lists files by time in reverse order with indicator
+alias ltra='ls -lFthra'       # Lists all files by time in reverse order with indicator

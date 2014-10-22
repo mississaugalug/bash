@@ -1,0 +1,2 @@
+# uses vim as less for syntax highlight
+alias less='/usr/share/vim/vim7*/macros/less.sh'

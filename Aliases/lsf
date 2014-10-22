@@ -1,5 +1,0 @@
-# Displays sub folders in current directory
-
-lsf() {
-  echo */ | tr ' ' '\n'
-}

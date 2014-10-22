@@ -1,0 +1,5 @@
+## tar aliases
+
+alias utar='tar -xvf'     # Extracts a .tar file
+alias utarz='tar -xzvf'   # Extracts a .tar.gz file
+alias tarz='tar -czvf'    # Creates a .tar.gz file

@@ -1,0 +1,5 @@
+## Date aliases
+
+
+alias datef='date +%Y-%m-%d'  # Output = 2014-10-21
+alias dateu='date +%Y%m%d'    # Output = 20141021
