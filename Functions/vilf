@@ -1,0 +1,7 @@
+# VI into the last modified file in a folder
+
+vilf() {
+  unset FILE
+  FILE=$(/bin/ls -1tr | tail -n1)
+  vi $FILE
+}

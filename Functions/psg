@@ -1,0 +1,7 @@
+# Same as 'ps -ef | grep', but with the header
+
+psg() {
+  HEADER=$(ps -ef | head -n 1)
+  RESULTS=$(ps -ef | grep $1 | grep -v grep)
+  echo -e "$HEADER\n$RESULTS"
+}
