@@ -11,21 +11,42 @@ fi
 
 ## Sets up package manager aliases based on distro
 # Settings for Ubuntu
-if [ "$LINUX_VERSION" = "Ubuntu" ] ; then
-  alias aptdate='sudo apt-get update'
-  alias aptgrade='sudo apt-get upgrade'
-  alias aptinst='sudo apt-get install'
-  alias apts='apt-cache search'
-  alias apdapg='sudo apt-get update && sudo apt-get upgrade'
+if [[ "$DISTRO" =~ (Ubuntu|LinuxMint) ]] ; then
+  alias aptdate='sudo apt-get update'         # Updates package list
+  alias aptgrade='sudo apt-get upgrade'       # Updates all packages
+  alias apts='apt-cache search'               # Search for package
+  alias aptrm='sudo apt-get remove'           # Removes package
+
+  aptinst () {                                # Install package
+    if [ -d ${HOME}/bin/var/log ] ; then
+      LOG=${HOME}/bin/var/log/$(hostname)-package-install.log
+    fi
+
+    echo -e "$(date)\t-\tInstalling packages: $*" > $LOG
+    sudo apt-get install $*
+}
+
 # Settings for OpenSuse
-elif [ "$LINUX_VERSION" = "OpenSuse" ]
+elif [ "$DISTRO" = "OpenSuse" ]
  then
   alias zypin='sudo zypper in'
   alias zyprm='sudo zypper rm'
   alias zypre='sudo zypper refresh'
   alias zypse='zypper se'
-fi
+
 # Settings for CentOS
-#elif [ "$LINUX_VERSION" = "CentOS" ]
-#elif [ "$LINUX_VERSION" = "Red" ]  # RedHat
-#fi
+elif [[ "$DISTRO" =~ (CentOS|RedHat*) ]] ; then
+  alias yumdate='sudo yum check-update'       # Updates package list
+  alias yumgrade='sudo yum update'            # Updates all packages
+  alias yumse='yum search'                    # Search for package
+  alias yumrm='sudo yum remove'               # Removes package
+
+  yuminst () {                                # Install package
+    if [ -d ${HOME}/bin/var/log ] ; then
+      LOG=${HOME}/bin/var/log/$(hostname)-package-install.log
+    fi
+
+    echo -e "$(date)\t-\tInstalling packages: $*" > $LOG
+    sudo yum install $*
+}
+fi
