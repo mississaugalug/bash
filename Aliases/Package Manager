@@ -1,12 +1,5 @@
-## Gets distro
-OS1=$(cat /etc/issue.net | head -1 | awk '{print $1}')
-if [ $(echo $OS1 | grep -qi 'red' 2> /dev/null ; echo $?) = 0 ] ; then
-  LINUX_VERSION="Red Hat"
-elif [ $(echo $OS1 | grep -qi 'ubuntu' 2> /dev/null ; echo $?) = 0 ] ; then
-  LINUX_VERSION="Ubuntu"
-elif [ $(echo $OS1 | grep -qi 'open.*suse' 2> /dev/null ; echo $?) = 0 ] ; then
-  LINUX_VERSION="OpenSuse"
-fi
+## Sets up aliases for package manager based on value of DISTRO
+# See "getDistroInfo" function
 
 
 ## Sets up package manager aliases based on distro
