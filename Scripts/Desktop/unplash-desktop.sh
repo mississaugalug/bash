@@ -80,7 +80,7 @@ cd ${UNSPLASH_DIR}
 TODAYS_PHOTO=$(ls -t *.jpg | head -1)
 
 # Sets background based on distro and desktop
-if [ -f ${UNSPLASH_DIR}/${TODAYS_PHOTO} ] ; then
+if [ -f "${UNSPLASH_DIR}/${TODAYS_PHOTO}" ] ; then
   case $DISTRO in
     Ubuntu)
         gsettings set org.gnome.desktop.background picture-uri "file://${UNSPLASH_DIR}/${TODAYS_PHOTO}"
