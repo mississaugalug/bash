@@ -1,0 +1,24 @@
+# Port scan with Bash's built-in sockets
+
+nmap2 () {
+[[ $# -ne 1 ]] && echo "Please provide server name" && return 1
+
+for i in {1..9000} ; do
+  SERVER="$1"
+  PORT=$i
+  (echo  > /dev/tcp/$SERVER/$PORT) >& /dev/null &&
+   echo "Port $PORT seems to be open"
+done
+}
+
+
+# Example of running the scan against my gateway:
+
+$ GW=$(route -n | grep '^0.0.0.0' | awk '{print $2}')
+
+$ nmap $GW
+The program 'nmap' is currently not installed. You can install it by typing:
+sudo apt-get install nmap
+
+$ nmap2 $GW
+Port 1720 seems to be open

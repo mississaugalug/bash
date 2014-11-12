@@ -1,0 +1,15 @@
+## Finds what distro you are running
+# See https://coderwall.com/p/vpx-qq for a list of strings that can be used
+
+getDistroInfo () {
+SYSTEM=$(uname -a | awk '{print $1}')
+if [ $SYSTEM = "Linux" ] ; then
+  if [ "$(which lsb_release)" ] ; then
+    DISTRO=$(lsb_release -si)
+  elif [ -f /etc/issue.net ] ; then
+    DISTRO=$(head -1 /etc/issue.net | sed 's/\([a-zA-Z]*\)\([0-9].*\)/\1/g' | sed 's/release//')
+  else
+    echo "Could not find Linux distro"
+  fi
+fi
+}
