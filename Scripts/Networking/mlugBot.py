@@ -53,15 +53,11 @@ class MessageLogger:
     def __init__(self, file):
         self.file = file
 
-#    def log(self, message, channel, msg):
     def log(self, message):
         """Write a message to the file."""
         timestamp = time.strftime("[%H:%M:%S]", time.localtime(time.time()))
         self.file.write('%s %s\n' % (timestamp, message))
         self.file.flush()
-#        if re.search(r"mlugbot", message):
-#            msg = "Don't yell"
-#            self.msg(channel, msg)
 
     def close(self):
         self.file.close()
@@ -239,7 +235,7 @@ class LogBot(irc.IRCClient):
             self.logger.log("<%s> %s" % (self.nickname, msg))
         
         # yelling
-        elif re.search(r'^([A-Z]{2,} ?.?)+$', msg):
+        elif re.search(r'^([^a-z]+[\s|\W][A-Z])', msg):
             msg = "%s: Please, NO YELLING IN THE CHAT!" % user
             self.msg(channel, msg)
             self.logger.log("<%s> %s" % (self.nickname, msg))
