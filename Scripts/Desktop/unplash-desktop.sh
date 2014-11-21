@@ -10,6 +10,7 @@
 # License: Released under the terms of the GNU GPL license
 ################################################################################
 ################################################################################
+#set -x
 
 # Creates the folder if needed
 if [ ! -f "${HOME}/Pictures/Unsplash" ] ; then
@@ -50,14 +51,23 @@ if [[ $? -eq 0 ]] ; then
 fi
 
 # Gets URLs for this weeks photos
-THIS_WEEKS_PHOTOS=$(wget -q http://unsplash.com/ -O - | grep jpg | grep -v \
+THIS_WEEKS_PHOTOS_URL=$(wget -q http://unsplash.com/ -O - | grep jpg | grep -v \
 twitter | awk -F= '{print $2}' | sed 's/\?q//' | sed 's/"//')
 
 # Downloads this weeks photos
-if [ "$THIS_WEEKS_PHOTOS" ] ; then
-  for PHOTO in $THIS_WEEKS_PHOTOS ; do
-    cd ${UNSPLASH_DIR}
-    wget -q $PHOTO
+if [ "$THIS_WEEKS_PHOTOS_URL" ] ; then
+  cd ${UNSPLASH_DIR}
+  for PHOTO_URL in $THIS_WEEKS_PHOTOS_URL ; do
+    # Checks if jpg is in the URL
+    if [[ $(echo $PHOTO_URL | grep -i jpg ; echo $?) -eq 0 ]] ; then
+      PHOTO_FILE_NAME=$(echo $PHOTO_URL | awk -F/ '{print $4}')
+    # else, let's add it
+    else
+      PHOTO_FILE_NAME=$(echo $PHOTO_URL | awk -F/ '{print $4}').jpg
+    fi
+    
+    # Get the photo and save as file name
+    wget -q $PHOTO_URL -O $PHOTO_FILE_NAME
   done
 else
   echo "Could not get string for this weeks photos"
@@ -66,7 +76,7 @@ fi
 
 # Makes sure all files have lower case jpg
 cd ${UNSPLASH_DIR}
-rename 'y/*.JPG/*.jpg/' *.JPG
+ls *.JPG > /dev/null 2>&1 && rename 'y/*.JPG/*.jpg/' *.JPG
 
 SetNewPhoto
 
