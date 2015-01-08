@@ -39,12 +39,12 @@ To run the script:
 TO DO:
 
 - Make bot say something when alone
-. Someone enters
-. By himself
-- meet
+    . Someone enters
+    . By himself
+- meet (need calendar update)
 - man
 - facts
-- randomize bash
+    . User swear count
 - meow
 - roof (dog)
 - Remove self logging
@@ -68,7 +68,43 @@ from re import findall
 import subprocess
 import os
 
-argchannel = sys.argv[1]
+# For Twitter (man)
+from twitter import *
+import random
+from twitter_app_credentials import *
+twitter = Twitter(
+auth=OAuth(access_token_key, access_token_secret, consumer_key, consumer_secret))
+
+# For Twitter feed
+from thread import start_new_thread
+from datetime import datetime, timedelta
+
+myNick = (sys.argv[1])
+
+def twitterthread(self, channel):
+    userlist = ['victorbrca', 'MississaugaLUG']
+    keepthread = 1
+    while keepthread > 0:
+    #twitterdb = open('lib/twitterdb', 'rw')
+    #print "This is the thread running"
+        for user in userlist:
+            raw = twitter.statuses.user_timeline(screen_name=user,count=1)[0]
+            #raw = r[0]
+            create_date = raw['created_at'].encode('utf-8')
+            date = re.sub(r'\+[0-9]{4}', 'UTC', create_date)
+            #print "raw date is %s" % date
+            cdate = datetime.strptime(date, '%a %b %d %H:%M:%S %Z %Y')
+            print "post date is %s" % cdate
+            current_time = datetime.now() - timedelta(minutes = 30)
+            print "current time -30mins is %s" % current_time
+            if cdate > current_time:
+                tweet = ("@%s: %s" % (raw["user"]["screen_name"], raw["text"]))
+                print tweet
+                self.msg(channel, tweet)
+                time.sleep(10)
+            else:
+                print "no new tweets"
+            time.sleep(10)
 
 class MessageLogger:
     """
@@ -91,7 +127,7 @@ class MessageLogger:
 class LogBot(irc.IRCClient):
     """A logging IRC bot."""
 
-    nickname = "mlugbot"
+    nickname = myNick
 
     def connectionMade(self):
         irc.IRCClient.connectionMade(self)
@@ -105,18 +141,19 @@ class LogBot(irc.IRCClient):
                         time.asctime(time.localtime(time.time())))
         self.logger.close()
 
-
     # callbacks for events
 
     def signedOn(self):
         """Called when bot has succesfully signed on to server."""
         self.join(self.factory.channel)
 
+
     def joined(self, channel):
         """This will get called when the bot joins the channel."""
         self.logger.log("[I have joined %s]" % channel)
         msg = "Hello, I'm the MLUG channel bot. Type 'help' to view how I can help you."
         self.msg(channel, msg)
+
 
     def privmsg(self, user, channel, msg):
         """This will get called when the bot receives a message."""
@@ -131,13 +168,22 @@ class LogBot(irc.IRCClient):
             self.msg(user, msg)
             return
 
-        """ Handles if a message directed at me """
-        # Displays quick help options
+    ###
+    ## Handles if a message directed at me ###
+    ###
+
+    # Hello
+        elif re.search(r"%s[:,] hello" % self.nickname, msg):
+            msg = "Hello %s, I'm the MLUG channel bot. Type '!help' to view how I can help you." % user
+            self.msg(channel, msg)
+            self.logger.log("<%s> %s" % (self.nickname, msg))
+
+    # Quick help options
         if re.search(r'%s[:,] (help|ping)$' % self.nickname, msg):
             msg = "Commands start with '!'\nAvailable options: help (full help), about, motd, history (chat history), mhistory (history of mlug), meet, wiki, man. \nFun options: bash, whoareyou, make me a sandwich, moo, fortune, facts"
             self.msg(channel, msg)
 
-        # Full help options
+    # Full help options
         if msg == "!help":
             h=open("lib/help")
             hlp = h.read()
@@ -148,46 +194,7 @@ class LogBot(irc.IRCClient):
                 #time.sleep(.2)
             h.close()
 
-        # Fun commands
-        if msg == "!fun":
-            f=open("lib/fun")
-            fun = f.read()
-            for line in fun.split(os.linesep):
-                msg = ("%s" % line)
-                self.msg(channel, msg)
-                self.logger.log("<%s> %s" % (self.nickname, msg))
-                #time.sleep(.8)
-            f.close()
-
-        # Meet
-        if msg == "!meet":
-            msg = "I'm not programmed with this option yet"
-            self.msg(channel, msg)
-            self.logger.log("<%s> %s" % (self.nickname, msg))
-#            f=open("lib/fun")
-#            fun = f.read()
-#            for line in fun.split(os.linesep):
-#                msg = ("%s" % line)
-#                self.msg(channel, msg)
-#                self.logger.log("<%s> %s" % (self.nickname, msg))
-#                #time.sleep(.8)
-#            f.close()
-
-        # man
-        if msg == "!man":
-            msg = "I'm not programmed with this option yet"
-            self.msg(channel, msg)
-            self.logger.log("<%s> %s" % (self.nickname, msg))
-#            f=open("lib/fun")
-#            fun = f.read()
-#            for line in fun.split(os.linesep):
-#                msg = ("%s" % line)
-#                self.msg(channel, msg)
-#                self.logger.log("<%s> %s" % (self.nickname, msg))
-#                #time.sleep(.8)
-#            f.close()
-
-        # About
+    # About
         if msg == "!about":
             f=open("lib/about")
             about = f.read()
@@ -198,8 +205,19 @@ class LogBot(irc.IRCClient):
                 #time.sleep(.8)
             f.close()
 
-        # Displays history in a private window
-        #elif re.search(r'%s[:,] history$' % self.nickname, msg):
+    # Displays motd
+        #elif re.search(r'%s[:,] motd$' % self.nickname, msg):
+        elif msg == "!motd":
+            f=open("lib/motd")
+            motd = f.read()
+            for line in motd.split(os.linesep):
+                msg = ("%s" % line)
+                self.msg(channel, msg)
+                self.logger.log("<%s> %s" % (self.nickname, msg))
+                #time.sleep(.8)
+            f.close()
+
+    # Displays history in a private window
         elif msg == "!history":
             if channel == '#mlug-priv':
                 self.msg(channel, "%s: I'm sorry but we don't log messages here" % user)
@@ -219,7 +237,7 @@ class LogBot(irc.IRCClient):
                  time.sleep(.8)
             logfile.close()
 
-        # Displays mlug history
+    # Displays mlug history
         elif msg == "!mhistory":
             f=open("lib/history")
             history = f.read()
@@ -230,107 +248,8 @@ class LogBot(irc.IRCClient):
                 #time.sleep(.8)
             f.close()
 
-
-        # Hello
-        elif re.search(r"%s[:,] hello" % self.nickname, msg):
-            msg = "Hello %s, I'm the MLUG channel bot. Type '!help' to view how I can help you." % user
-            self.msg(channel, msg)
-            self.logger.log("<%s> %s" % (self.nickname, msg))
-
-        # Displays motd
-        #elif re.search(r'%s[:,] motd$' % self.nickname, msg):
-        elif msg == "!motd":
-            f=open("lib/motd")
-            motd = f.read()
-            for line in motd.split(os.linesep):
-                msg = ("%s" % line)
-                self.msg(channel, msg)
-                self.logger.log("<%s> %s" % (self.nickname, msg))
-                #time.sleep(.8)
-            f.close()
-
-        # swearing at me
-        elif re.search(r'%s[:,] .*(fuck|cunt|pussy|cock|asshole|shit|fag|slut|bitch)' % self.nickname, msg):
-            swear = re.search(r'(fuck|cunt|pussy|cock|asshole|shit|fag|slut|bitch)', msg)
-            msg = "%s: No you are the %s!" % (user, swear.group())
-            self.msg(channel, msg)
-            self.logger.log("<%s> %s" % (self.nickname, msg))
-            msg = "%s: Now stop swearing!" % user
-            self.msg(channel, msg)
-            self.logger.log("<%s> %s" % (self.nickname, msg))
-
-        # Unknown option
-        elif re.search(r'%s[:,] .+' % self.nickname, msg):
-            msg = "I don't understand that command"
-            self.msg(channel, msg)
-            self.logger.log("<%s> %s" % (self.nickname, msg))
-
-        # Talking to me
-        elif re.search(r'%s[:,] ?$' % self.nickname, msg):
-            # someone is talking to me, lets respond:
-            msg = "%s: sup? Say \"%s: help\" for a list of commands" % (user, self.nickname)
-            self.say(channel, msg)
-
-
-            ''' ### Fun Options ###'''
-
-
-        # Bash tip
-        elif msg == "!bash":
-            bashtp=open("/tmp/bashcookbook")
-            msg = bashtp.read()
-            self.msg(channel, msg)
-            self.logger.log("<%s> %s" % (self.nickname, msg))
-            bashtp.close()
-
-        # Who are you
-        #elif re.search(r'%s[:,] who ?are ?you?' % self.nickname, msg):
-        elif msg == "!whoareyou":
-            msg = "%s: Who Are You is the eighth studio album by English rock band The Who, released through Polydor Records in the United Kingdom and MCA Records in the United States. It peaked at number 2 on the US charts and number 6 on the UK charts. It is The Who's last album with Keith Moon as the drummer; Moon died twenty days after the release of this album." % user
-            self.msg(channel, msg)
-            self.logger.log("<%s> %s" % (self.nickname, msg))
-            time.sleep(2)
-            msg = "%s: Being serious now, I can't tell you who I am. But I'll give you a hint... \"I've got no strings on me\"" % user
-            self.msg(channel, msg)
-            self.logger.log("<%s> %s" % (self.nickname, msg))
-
-        # make me a sandwich
-        elif re.search(r'!make me a sandwich', msg):
-            msg = "%s: what? make it yourself!" % user
-            self.msg(channel, msg)
-            self.logger.log("<%s> %s" % (self.nickname, msg))
-
-        # sudo make me a sandwich
-        elif re.search(r'!sudo make me a sandwich', msg):
-            msg = "%s: okay." % user
-            self.msg(channel, msg)
-            self.logger.log("<%s> %s" % (self.nickname, msg))
-
-        # moo
-        #elif re.search(r'%s[:,] moo$' % self.nickname, msg):
-        elif msg == "!moo":
-            self.msg(channel, '                 (__)')
-            self.msg(channel, '                 (oo)')
-            time.sleep(.5)
-            self.msg(channel, '           /------\/ ')
-            self.msg(channel, '          / |    ||  ')
-            time.sleep(.5)
-            self.msg(channel, '         *  /\---/\  ')
-            self.msg(channel, '            ~~   ~~  ')
-            self.msg(channel, '...\"Have you mooed today?\"...\n')
-
-        # Fortune
-        elif msg == '!fortune':
-            f = subprocess.Popen('./lib/cowsay.sh', stdout=subprocess.PIPE)
-            fortune = f.communicate()[0]
-            for line in fortune.split(os.linesep):
-                #msg = line.strip()
-                msg = ("%s" % line)
-                self.msg(channel, msg)
-                self.logger.log("<%s> %s" % (self.nickname, msg))
-
-        # Facts - who created me, swear count (need logger)
-        if msg == "!facts":
+    # Meet
+        elif msg == "!meet":
             msg = "I'm not programmed with this option yet"
             self.msg(channel, msg)
             self.logger.log("<%s> %s" % (self.nickname, msg))
@@ -343,22 +262,7 @@ class LogBot(irc.IRCClient):
 #                #time.sleep(.8)
 #            f.close()
 
-
-            """ Message not directed to me """
-
-        # Swearing
-        elif re.search(r'(fuck|cunt|pussy|cock|asshole|shit|fag|slut|bitch)', msg):
-            msg = "%s: No swearing!" % user
-            self.msg(channel, msg)
-            self.logger.log("<%s> %s" % (self.nickname, msg))
-
-        # yelling
-        elif re.search(r'^([^a-z]+[\s|\W][A-Z])', msg):
-            msg = "%s: Please, NO YELLING IN THE CHAT!" % user
-            self.msg(channel, msg)
-            self.logger.log("<%s> %s" % (self.nickname, msg))
-
-        # Wikipedia
+    # Wikipedia
         elif re.search(r"!wiki .*", msg):
             searchstring = msg.split(' ', 1)[1]
             article = searchstring
@@ -380,7 +284,165 @@ class LogBot(irc.IRCClient):
                 msg = "^ %s" % utfsoup
             self.msg(channel, msg)
 
-        # Grabs URL
+    # man
+        elif re.search(r"!man .*", msg):
+            command = msg.split(' ', 1)[1]
+            #print command
+            sections = ['1', '2', '3', '4', '5', '6', '7', '8']
+            for section in sections:
+                url = "http://linux.die.net/man/%s/%s" % (section, command)
+                try:
+                    urllib2.urlopen(url)
+                except urllib2.HTTPError:
+                        if section == "8":
+                            commandout = "Command not found"
+                            self.msg(channel, commandout)
+                else:
+                    soup = BeautifulSoup(urllib2.urlopen("%s" % url))
+                    oneline = soup.fetch('p')[0].getText().splitlines()[0]
+                    w = re.sub(r'Synopsis.*$', '', oneline)
+                    whatis = w.encode('utf-8')
+                    self.msg(channel, whatis)
+                    break
+
+    # Fun commands
+        elif msg == "!fun":
+            f=open("lib/fun")
+            fun = f.read()
+            for line in fun.split(os.linesep):
+                msg = ("%s" % line)
+                self.msg(channel, msg)
+                self.logger.log("<%s> %s" % (self.nickname, msg))
+                #time.sleep(.8)
+            f.close()
+
+    # Start Twitter feed
+        elif msg == "!starttwitter":
+            start_new_thread(twitterthread, (1, channel))
+            print "Twitter started"
+
+    # swearing at me
+        elif re.search(r'%s[:,] .*(fuck|cunt|pussy|cock|asshole|shit|fag|slut|bitch)' % self.nickname, msg):
+            swear = re.search(r'(fuck|cunt|pussy|cock|asshole|shit|fag|slut|bitch)', msg)
+            msg = "%s: No you are the %s!" % (user, swear.group())
+            self.msg(channel, msg)
+            self.logger.log("<%s> %s" % (self.nickname, msg))
+            msg = "%s: Now stop swearing!" % user
+            self.msg(channel, msg)
+            self.logger.log("<%s> %s" % (self.nickname, msg))
+
+    # Unknown option
+        elif re.search(r'%s[:,] .+' % self.nickname, msg):
+            msg = "I don't understand that command"
+            self.msg(channel, msg)
+            self.logger.log("<%s> %s" % (self.nickname, msg))
+
+    # Talking to me
+        elif re.search(r'%s[:,] ?$' % self.nickname, msg):
+            # someone is talking to me, lets respond:
+            msg = "%s: sup? Say \"%s: help\" for a list of commands" % (user, self.nickname)
+            self.say(channel, msg)
+
+
+### Fun Commands ###
+
+    # Bash tip
+        elif msg == "!bash":
+            #twitter = Twitter(
+    #auth=OAuth(access_token_key, access_token_secret, consumer_key, consumer_secret))
+            rawtimeline = twitter.statuses.user_timeline(screen_name="bashcookbook")
+            cleanup = ['RT','@']
+            status = []
+            for line in rawtimeline:
+                tweet = ("%s: %s" % (line["user"]["screen_name"], line["text"]))
+                if not any(cleanup in tweet for cleanup in cleanup):
+                    status.append(tweet)
+            status = (random.choice(status))
+            decoded = status.encode('utf-8')
+            msg = "^ @%s" % decoded
+            self.msg(channel, msg)
+#            bashtp=open("/tmp/bashcookbook")
+#            msg = bashtp.read()
+#            self.msg(channel, msg)
+#            self.logger.log("<%s> %s" % (self.nickname, msg))
+#            bashtp.close()
+
+    # Who are you
+        #elif re.search(r'%s[:,] who ?are ?you?' % self.nickname, msg):
+        elif msg == "!whoareyou":
+            msg = "%s: Who Are You is the eighth studio album by English rock band The Who, released through Polydor Records in the United Kingdom and MCA Records in the United States. It peaked at number 2 on the US charts and number 6 on the UK charts. It is The Who's last album with Keith Moon as the drummer; Moon died twenty days after the release of this album." % user
+            self.msg(channel, msg)
+            self.logger.log("<%s> %s" % (self.nickname, msg))
+            time.sleep(2)
+            msg = "%s: Being serious now, I can't tell you who I am. But I'll give you a hint... \"I've got no strings on me\"" % user
+            self.msg(channel, msg)
+            self.logger.log("<%s> %s" % (self.nickname, msg))
+
+    # make me a sandwich
+        elif re.search(r'!make me a sandwich', msg):
+            msg = "%s: what? make it yourself!" % user
+            self.msg(channel, msg)
+            self.logger.log("<%s> %s" % (self.nickname, msg))
+
+        # sudo make me a sandwich
+        elif re.search(r'!sudo make me a sandwich', msg):
+            msg = "%s: okay." % user
+            self.msg(channel, msg)
+            self.logger.log("<%s> %s" % (self.nickname, msg))
+
+    # moo
+        elif msg == "!moo":
+            self.msg(channel, '                 (__)')
+            self.msg(channel, '                 (oo)')
+            time.sleep(.5)
+            self.msg(channel, '           /------\/ ')
+            self.msg(channel, '          / |    ||  ')
+            time.sleep(.5)
+            self.msg(channel, '         *  /\---/\  ')
+            self.msg(channel, '            ~~   ~~  ')
+            self.msg(channel, '...\"Have you mooed today?\"...\n')
+
+    # Fortune
+        elif msg == '!fortune':
+            f = subprocess.Popen('./lib/cowsay.sh', stdout=subprocess.PIPE)
+            fortune = f.communicate()[0]
+            for line in fortune.split(os.linesep):
+                #msg = line.strip()
+                msg = ("%s" % line)
+                self.msg(channel, msg)
+                self.logger.log("<%s> %s" % (self.nickname, msg))
+
+    # Facts - who created me, swear count (need logger)
+        elif msg == "!facts":
+            msg = "I'm not programmed with this option yet"
+            self.msg(channel, msg)
+            self.logger.log("<%s> %s" % (self.nickname, msg))
+#            f=open("lib/fun")
+#            fun = f.read()
+#            for line in fun.split(os.linesep):
+#                msg = ("%s" % line)
+#                self.msg(channel, msg)
+#                self.logger.log("<%s> %s" % (self.nickname, msg))
+#                #time.sleep(.8)
+#            f.close()
+
+    ###
+    ## Messages not directed to me ###
+    ###
+
+    # Swearing
+        elif re.search(r'(fuck|cunt|pussy|cock|asshole|shit|fag|slut|bitch)', msg):
+            msg = "%s: No swearing!" % user
+            self.msg(channel, msg)
+            self.logger.log("<%s> %s" % (self.nickname, msg))
+
+    # yelling
+        elif re.search(r'^([^a-z]+[\s|\W][A-Z]{2,})', msg):
+            msg = "%s: Please, NO YELLING IN THE CHAT!" % user
+            self.msg(channel, msg)
+            self.logger.log("<%s> %s" % (self.nickname, msg))
+
+    # Grabs URL
         elif re.search(r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+", msg):
             urls = findall(r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+", msg)
             if urls:
@@ -393,11 +455,15 @@ class LogBot(irc.IRCClient):
                 msg = "^ %s" % utfsoup
                 self.msg(channel, msg)
 
-        # Heard my name
+    # Heard my name
         elif re.search(r'%s' % self.nickname, msg):
             msg = "%s: I heard you saying my name. Do you need help? Type \"%s: help\" or \"!help\" if you do." % (user, self.nickname)
             self.msg(channel, msg)
             self.logger.log("<%s> %s" % (self.nickname, msg))
+
+    ###
+    ## Channel actions
+    ###
 
     def action(self, user, channel, msg):
         """This will get called when the bot sees someone do an action."""
@@ -405,34 +471,27 @@ class LogBot(irc.IRCClient):
         self.logger.log("* %s %s" % (user, msg))
 
 
-    """ irc callbacks """
+    ###
+    ## irc callbacks
+    ###"""
 
     def userRenamed(self, oldname, newname):
         """Called when an IRC user changes their nickname."""
         old_nick = prefix.split('!')[0]
         new_nick = params[0]
         self.logger.log("%s is now known as %s" % (old_nick, new_nick))
-        #thischannel = "#vic-test"argchannel
-#        print argchannel
-#        pchannel = "#%s" % argchannel
-#        self.logger.log("%s is now known as %s" % (oldname, newname))
-        #msg = "%s is now known as %s" % (old_nick, new_nick)
-#        msg = "%s morphed to %s" % (oldname, newname)
-#        self.msg(pchannel, msg)
-
 
     def irc_JOIN(self, prefix, params):
         """ Welcomes user """
         nick = prefix.split('!', 1)[0]
         if nick != self.nickname:
             channel = params[-1]
-            msg = "%s: welcome to mlug" % (nick)
+            msg = "%s: welcome to %s" % (nick, channel)
             self.msg(channel, msg)
         elif nick == self.nickname:
             channel = params[-1]
-            msg = "Yo yo... mlugbot is in the hood bitches!"
+            msg = "Yo yo... %s is in the hood bitches!" % nick
             self.msg(channel, msg)
-
 
     def userKicked(self, kickee, channel, kicker, message):
         """ Called when a user is kicked from the channel """
@@ -479,7 +538,7 @@ if __name__ == '__main__':
     log.startLogging(sys.stdout)
 
     # create factory protocol and application
-    f = LogBotFactory(sys.argv[1], sys.argv[2])
+    f = LogBotFactory(sys.argv[2], sys.argv[3])
 
     # connect factory to this host and port
     reactor.connectTCP("irc.freenode.net", 6667, f)
