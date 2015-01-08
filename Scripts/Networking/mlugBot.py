@@ -53,6 +53,7 @@ TO DO:
 # twisted imports
 from twisted.words.protocols import irc
 from twisted.internet import reactor, protocol
+from twisted.internet.task import LoopingCall
 from twisted.python import log
 
 # system imports
@@ -76,35 +77,12 @@ twitter = Twitter(
 auth=OAuth(access_token_key, access_token_secret, consumer_key, consumer_secret))
 
 # For Twitter feed
-from thread import start_new_thread
+import threading
 from datetime import datetime, timedelta
+twitter_userlist = ['victorbrca', 'MississaugaLUG']
 
 myNick = (sys.argv[1])
 
-def twitterthread(self, channel):
-    userlist = ['victorbrca', 'MississaugaLUG']
-    keepthread = 1
-    while keepthread > 0:
-    #twitterdb = open('lib/twitterdb', 'rw')
-    #print "This is the thread running"
-        for user in userlist:
-            raw = twitter.statuses.user_timeline(screen_name=user,count=1)[0]
-            #raw = r[0]
-            create_date = raw['created_at'].encode('utf-8')
-            date = re.sub(r'\+[0-9]{4}', 'UTC', create_date)
-            #print "raw date is %s" % date
-            cdate = datetime.strptime(date, '%a %b %d %H:%M:%S %Z %Y')
-            print "post date is %s" % cdate
-            current_time = datetime.now() - timedelta(minutes = 30)
-            print "current time -30mins is %s" % current_time
-            if cdate > current_time:
-                tweet = ("@%s: %s" % (raw["user"]["screen_name"], raw["text"]))
-                print tweet
-                self.msg(channel, tweet)
-                time.sleep(10)
-            else:
-                print "no new tweets"
-            time.sleep(10)
 
 class MessageLogger:
     """
@@ -147,13 +125,33 @@ class LogBot(irc.IRCClient):
         """Called when bot has succesfully signed on to server."""
         self.join(self.factory.channel)
 
-
     def joined(self, channel):
         """This will get called when the bot joins the channel."""
         self.logger.log("[I have joined %s]" % channel)
-        msg = "Hello, I'm the MLUG channel bot. Type 'help' to view how I can help you."
-        self.msg(channel, msg)
 
+    def twitterFeed(self, channel):
+        #chan = channel
+        twitter_userlist = ['victorbrca', 'MississaugaLUG']
+        #print twitter_userlist
+        #print "This is the thread running"
+        for user in twitter_userlist:
+            raw = twitter.statuses.user_timeline(screen_name=user,count=1)[0]
+            create_date = raw['created_at']
+            date = re.sub(r'\+[0-9]{4}', 'UTC', create_date)
+            #print "raw date is %s" % date
+            cdate = datetime.strptime(date, '%a %b %d %H:%M:%S %Z %Y')
+#            print "post date is %s" % cdate
+            current_time = datetime.now() - timedelta(minutes = 5)
+#            print "current time -30mins is %s" % current_time
+            if cdate > current_time:
+                tweet = ("@%s: %s" % (raw["user"]["screen_name"], raw["text"]))
+#                print tweet
+                msg = tweet.encode('utf-8')
+                self.sendLine("PRIVMSG %s :%s" % (channel, msg))
+                #time.sleep(10)
+#            else:
+#                print "no new tweets"
+            #time.sleep(10)
 
     def privmsg(self, user, channel, msg):
         """This will get called when the bot receives a message."""
@@ -179,12 +177,12 @@ class LogBot(irc.IRCClient):
             self.logger.log("<%s> %s" % (self.nickname, msg))
 
     # Quick help options
-        if re.search(r'%s[:,] (help|ping)$' % self.nickname, msg):
+        elif re.search(r'%s[:,] (help|ping)$' % self.nickname, msg):
             msg = "Commands start with '!'\nAvailable options: help (full help), about, motd, history (chat history), mhistory (history of mlug), meet, wiki, man. \nFun options: bash, whoareyou, make me a sandwich, moo, fortune, facts"
             self.msg(channel, msg)
 
     # Full help options
-        if msg == "!help":
+        elif msg == "!help":
             h=open("lib/help")
             hlp = h.read()
             for line in hlp.split(os.linesep):
@@ -195,7 +193,7 @@ class LogBot(irc.IRCClient):
             h.close()
 
     # About
-        if msg == "!about":
+        elif msg == "!about":
             f=open("lib/about")
             about = f.read()
             for line in about.split(os.linesep):
@@ -318,8 +316,12 @@ class LogBot(irc.IRCClient):
 
     # Start Twitter feed
         elif msg == "!starttwitter":
-            start_new_thread(twitterthread, (1, channel))
             print "Twitter started"
+            task = LoopingCall(self.twitterFeed, channel)
+            task.start(300)
+#            twitter_thread = TwitterThread(channel)
+#            twitter_thread.start()
+
 
     # swearing at me
         elif re.search(r'%s[:,] .*(fuck|cunt|pussy|cock|asshole|shit|fag|slut|bitch)' % self.nickname, msg):
@@ -460,6 +462,7 @@ class LogBot(irc.IRCClient):
             msg = "%s: I heard you saying my name. Do you need help? Type \"%s: help\" or \"!help\" if you do." % (user, self.nickname)
             self.msg(channel, msg)
             self.logger.log("<%s> %s" % (self.nickname, msg))
+
 
     ###
     ## Channel actions
